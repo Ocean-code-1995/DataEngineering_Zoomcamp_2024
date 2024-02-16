@@ -1,0 +1,116 @@
+https://dezoomcamp.streamlit.app/Module%201%20Introduction%20&%20Prerequisites
+
+# build the container
+docker build -t test:pandas .
+
+# run the container
+#docker run -it \
+#    -e POSTGRES_USER="root" \
+#    -e POSTGRES_PASSWORD="root" \
+#    -e POSTGRES_DB="ny_taxi" \
+#    -v "$(pwd)"/ny_taxi_postgres_data:/var/lib/postgresql/data \
+#    -p 5432:5432 \
+#    postgres:13
+
+#### pgadmin
+#docker run -it\
+#    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+#    -e PGADMIN_DEFAULT_PASSWORD="root" \
+#    -p 800:80 \
+#    dpage/pgadmin4
+
+#############
+## network ##
+#############
+# 1) create a network to connect the containers
+docker network create postgres-network
+
+docker run -it \
+    -e POSTGRES_USER="root" \
+    -e POSTGRES_PASSWORD="root" \
+    -e POSTGRES_DB="ny-taxi" \
+    -v "$(pwd)"/postgres-data:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    --network=postgres-network \
+    --name pg-database-container \
+    postgres:13
+
+# postgres:13 = image from docker hub
+
+# run pg admin in the same network
+# pgadmin container
+docker run -it\
+    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+    -e PGADMIN_DEFAULT_PASSWORD="root" \
+    -p 800:80 \
+    --network=postgres-network \
+    --name pgadmin-container \
+    dpage/pgadmin4
+
+# -> both containers are running in the same network allowing them to communicate with each other !
+
+###/// 2) rerun network with containers:
+-------------------------------------
+docker run -d \
+    -e POSTGRES_USER="root" \
+    -e POSTGRES_PASSWORD="root" \
+    -e POSTGRES_DB="ny-taxi" \
+    -v "$(pwd)"/postgres-data:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    --network=postgres-network \
+    --name pg-database-container \
+    postgres:13
+
+docker run -d \
+    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+    -e PGADMIN_DEFAULT_PASSWORD="root" \
+    -p 800:80 \
+    --network=postgres-network \
+    --name pgadmin-container \
+    dpage/pgadmin4
+
+# -> access & configure pgadmin server now!!! http://localhost:800/.
+General tab:
+------------
+Name: Local PostgreSQL
+
+Connection tab:
+--------------
+Host name/address: pg-database-container
+Port: 5432
+Maintenance database: ny-taxi
+Username: root
+Password: root
+
+Putting the ingestion script intp docker
+----------------------------------------
+
+
+python ingest_data.py \
+    --user=root \
+    --password=root \
+    --host=localhost \
+    --port=5432 \
+    --db=ny-taxi \
+    --table_name=yellow_taxi_trips \
+    --local_file="data/yellow_tripdata_2021-01.csv"
+
+
+    
+--url="https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2021-01.csv"
+    
+
+
+
+# dockerize data_ingestion with dockerfile and:
+docker build -t taxi_ingest:v001 .
+
+docker run -it taxi_ingest:v001 \
+    --user=root \
+    --password=root \
+    --host=172.20.0.2 \
+    --port=5432 \
+    --db=ny-taxi \
+    --table_name=yellow_taxi_trips \
+    --local_file="data/yellow_tripdata_2021-01.csv"
+

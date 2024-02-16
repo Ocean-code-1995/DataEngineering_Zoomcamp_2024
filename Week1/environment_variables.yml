@@ -1,0 +1,17 @@
+# environment variables (configure postgres)
+version: "3.8"
+services:
+    postgres:
+        image: postgres:13
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+            POSTGRES_DB: root
+        volumes:
+            - ./postgres-data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "root"]
+            interval: 5s
+            retries: 5
+        restart: always
+

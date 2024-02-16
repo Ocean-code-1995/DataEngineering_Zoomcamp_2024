@@ -1,0 +1,275 @@
+Course:
+------------------------------------------------------------------------------------
+- https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/cohorts/2024/01-docker-terraform/homework.md
+
+- https://dezoomcamp.streamlit.app/Module%201%20Introduction%20&%20Prerequisites
+------------------------------------------------------------------------------------
+
+=========================================
+1.2.2) Ingesting NY Taxi Data to postgres
+=========================================
+
+### a) Create database container:
+---------------------------------
+# mapping folders to containers (postgres creates neccessary folder in ny_taxi_postgres_data; see folder on local machine)
+
+docker run -it \
+    -e POSTGRES_USER="root" \
+    -e POSTGRES_PASSWORD="root" \
+    -e POSTGRES_DB="ny_taxi" \
+    -v "$(pwd)"/ny_taxi_postgres_data:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    postgres:13
+
+# -> create another terminal now for other neccessary commands
+
+### b) run cli client to access database
+----------------------------------------
+pgcli --help
+
+# connect to PostgreSQL container to be able to interact with db in terminal:
+pgcli -h localhost -p 5432 -u root -d ny_taxi
+
+# check database schema:
+\dt
+
+# -> create another terminal
+
+### c) download data (homework data):
+----------------------------------------
+ wget https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-09.csv.gz
+
+### d) run notebook create schema and push data
+----------------------------------------
+run: \d green_taxi_data
+select count(1) from green_taxi_data
+
+======================================
+1.2.3) Connecting pgAdmin and postgres
+======================================
+-> more convenient as with terminal.
+
+### a) Create pgAdmin container:
+----------------------------------------
+
+docker run -it\
+    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+    -e PGADMIN_DEFAULT_PASSWORD="root" \
+    -p 8080:80 \
+    dpage/pgadmin4
+
+### b) Login to localhost:8080 and create server
+----------------------------------------
+
+General:
+- Name: Local docker
+
+Connection:
+Host name/address: localhost
+
+# >>>> NOTE: database and pgAdmin containers are not yet communicating with each other!
+
+### c) Create Networks
+docker network create pg-network
+
+docker run -it \
+    -e POSTGRES_USER="root" \
+    -e POSTGRES_PASSWORD="root" \
+    -e POSTGRES_DB="ny_taxi" \
+    -v "$(pwd)"/postgres-data:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    --network=pg-network \
+    --name pg-database \
+    postgres:13
+
+# postgres:13 = image from docker hub
+
+# run pg admin in the same network
+# pgadmin container
+docker run -it\
+    -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+    -e PGADMIN_DEFAULT_PASSWORD="root" \
+    -p 8080:80 \
+    --network=pg-network \
+    --name pgadmin \
+    dpage/pgadmin4
+
+# enter localhost:8080 and create server:
+
+General:
+- Name: Local docker
+
+Connection:
+Host name/address: pg-database
+port: 5432
+Maintenance database: postgres
+Username: root
+password: root
+
+================================================
+1.2.4. Putting the ingestion script into Docker
+================================================
+
+a) ingest data with ingest_data.py (running locally on host machine):
+--------------------------------------------------------------------
+python ingest_data.py \
+    --user=root \
+    --password=root \
+    --host=localhost \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=green_taxi_trips \
+    --url="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-09.csv.gz"
+
+
+b) dockerize (running inside docker container):
+----------------------------------------------
+# dockerize data_ingestion with dockerfile:
+
+docker build -t taxi_ingest:v001 .
+
+docker run -it taxi_ingest:v001 \
+    --user=root \
+    --password=root \
+    --host=localhost \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=green_taxi_trips \
+    --url="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-09.csv.gz"
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ERROR command above; GPT solution works:
+
+docker build -t taxi_ingest:v001 .
+
+docker run -it \
+    --network=pg-network \
+    taxi_ingest:v001 \
+    --user=root \
+    --password=root \
+    --host=pg-database \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=green_taxi_trips \
+    --url="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-09.csv.gz"
+
+
+c) HTTP server + ipconfig
+------------------------
+python -m http.server
+
+When you run the command python -m http.server, it starts a simple HTTP server in the current directory. This server listens on a specified port (usually port 8000 by default) and serves files from the directory where the command is executed.
+
+get ip address: ifconfig
+192.168.0.2
+
+
+http://localhost:8000/data/green_tripdata_2019-09.csv
+
+docker run -it \
+    --network=pg-network \
+    taxi_ingest:v001 \
+    --user=root \
+    --password=root \
+    --host=pg-database \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=green_taxi_trips \
+    --url="http://192.168.0.2:8000/data/green_tripdata_2019-09.csv"
+
+### ///// section c does not work yet !!!!!!!!
+
+
+=======================================================
+1.2.5. Running Postgres and pgAdmin with Docker-Compose
+=======================================================
+
+Create network more conveniently with yaml file:
+------------------------------------------------
+----> docker compose: put configurations into one file
+
+- create docker-compose.yaml file in vscode
+
+- stop previous containers:
+docker stop pgadmin
+docker stop pg-database
+docker ps                      # confirm that nothing is running
+
+- run yaml file to create network:
+---------------------------------
+docker-compose up -d
+docker-compose -p test up -d        # provides name for stack
+
+-> retrieve network name with:
+docker network ls
+gives: test_default
+
+- recreate server at localhost:8080 in webbrowser
+-----> host = pgdatabase
+-----> maintenance database: ny_taxi
+
+- ingest data:
+--------------
+
+python ingest_data.py \
+    --user=root \
+    --password=root \
+    --host=pgdatabase \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=green_taxi_trips \
+    --url="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-09.csv.gz"
+
+/// OR:
+docker build -t taxi_ingest:v001 .
+docker build -t taxi_ingest:v001 -f Dockerfile .
+docker run -it \
+    --network=test_default \
+    taxi_ingest:v001 \
+    --user=root \
+    --password=root \
+    --host=pgdatabase \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=green_taxi \
+    --url="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-09.csv.gz"
+
+
+------------------------------Additional Useful Commands--------------------------------
+- stop container:
+control c on keyboard
+docker compose download
+
+- run in detached mode (get terminal back instead of running multiple terminals):
+docker-compose up -d
+-----------------------------------------------------------------------------------------
+
+
+
+========================================================
+------------------------HOMEWORK------------------------
+========================================================
+
+- made changes to Dockerfile
+
+- build image with updated Dockerfile to accommodate both py-files & neccessary python environment:
+docker build -t taxi_ingest:latest .
+
+- ingest data (taxi zones):
+
+a) create Dockerfile2 in same directory
+
+b) build new docker image:
+docker build -t taxi_ingest2:v001 -f Dockerfile2 .
+
+c) run file dockerized:
+docker run -it \
+    --network=test_default \
+    taxi_ingest2:v001 \
+    --user=root \
+    --password=root \
+    --host=pgdatabase \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=taxi_zones \
+    --url="https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv"

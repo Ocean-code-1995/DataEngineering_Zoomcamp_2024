@@ -1,0 +1,10 @@
+pandas
+pyarrow
+jupyter
+numpy
+matplotlib
+sqlalchemy
+#psycopg_binary
+psycopg2-binary
+pgcli
+gzip

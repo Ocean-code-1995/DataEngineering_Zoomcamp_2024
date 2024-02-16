@@ -1,0 +1,18 @@
+# set base image (python image) for your container
+FROM python:3.9
+
+# install dependencies
+RUN pip install pandas pyarrow sqlalchemy psycopg2-binary
+
+# Update package lists and install wget
+RUN apt-get update && apt-get install -y wget
+
+# set the working directory in the container to /app
+# all subsequent commands will be run from this directory
+WORKDIR /app
+
+# copy ingest_data2.py from host machine into image, specifically into /app directory
+COPY ingest_data2.py ingest_data2.py
+
+# set entry point: when docker run, run ingest_data2.py
+ENTRYPOINT [ "python", "ingest_data2.py"]
