@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: staging
+    database: dataengineering-411512
+    schema: ny_taxi
+
+    tables:
+      - name: yellow_taxi
+      - name: green_taxi
+      - name: fhv
