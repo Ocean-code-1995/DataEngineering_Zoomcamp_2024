@@ -55,4 +55,4 @@ on trips_unioned.pickup_location_id = pickup_zone.location_id
 inner join dim_zones as dropoff_zone
 on trips_unioned.dropoff_location_id = dropoff_zone.location_id
 
--- dbt build --select +fact_trips+--vars'{'is_test_run':'false'}'
+-- dbt build --select +fact_trips+--vars'{is_test_run:false}'
