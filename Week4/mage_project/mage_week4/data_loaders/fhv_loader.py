@@ -23,7 +23,7 @@ def load_data_from_api(*args, **kwargs) -> Tuple[pd.DataFrame, str]:
     for month in fetch_data_api(needed_data):
         data = pd.concat([data, month], ignore_index=True)
     
-    return data, needed_data['type']n pd.read_csv(io.StringIO(response.text), sep=',')
+    return data, needed_data['type']
 
 
 @test
