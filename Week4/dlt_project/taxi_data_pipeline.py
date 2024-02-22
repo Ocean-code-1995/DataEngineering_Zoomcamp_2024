@@ -13,32 +13,37 @@ def fetch_data_resource(trip_obj):
     :return: response containing the fetched data
     """
     trip_type = trip_obj['type']
+    print(f'Running pipeline for {collection["type"]} trip data.')
+
     for year in trip_obj['years']:
-        print(f"Fetching data for year {year}")
+        print(f" - Fetching data for year {year}")
         for month in range(1, 13):
             url = f'https://d37ci6vzurychx.cloudfront.net/trip-data/{trip_type}_tripdata_{year}-{month:02d}.parquet'
-            print(f"Downloading {trip_type} trip data for {year}-{month:02d}")
+            print(f"   - Downloading {trip_type} trip data for {year}-{month:02d}.")
             response = requests.get(url)
             response.raise_for_status()
-            df = pd.read_parquet(url, engine='pyarrow')
-            # in case of yellow taxi and fhv trip data, extra columns need to handled
+            monthly_df = pd.read_parquet(url, engine='pyarrow')
+
+            # in case of yellow taxi and fhv trip data, extra columns need to be handled
             if trip_type == 'yellow':
-                if 'airport_fee' in df.columns:
-                    df['airport_fee'] = df['airport_fee'].astype(float)
+                if 'airport_fee' in monthly_df.columns:
+                    monthly_df['airport_fee'] = monthly_df['airport_fee'].astype(float)
                 else:
-                    df['airport_fee'] = np.nan
+                    monthly_df['airport_fee'] = np.nan
+
             if trip_type == 'fhv':
-                if 'p_ulocation_id' in df.columns:
-                    df['PUlocationID'] = df['PUlocationID'].astype(float)
+                if 'PUlocationID' in monthly_df.columns:
+                    monthly_df['PUlocationID'] = monthly_df['PUlocationID'].astype(float)
                 else:
-                    df['PUlocationID'] = np.nan
-                if 'd_olocation_id' in df.columns:
-                    df['DOlocationID'] = df['DOlocationID'].astype(float)
+                    monthly_df['PUlocationID'] = np.nan
+                if 'DOlocationID' in monthly_df.columns:
+                    monthly_df['DOlocationID'] = monthly_df['DOlocationID'].astype(float)
                 else:
-                    df['DOlocationID'] = np.nan
-            yield df
-        print(f" -> Downloaded {trip_type} trip data for {year}\n")
-    print(f" ---> Downloaded {trip_type} trip data for all years")
+                    monthly_df['DOlocationID'] = np.nan
+
+            yield monthly_df
+        print(f" -> Downloaded {trip_type} trip data for {year}.\n")
+    print(f" ---> Downloaded {trip_type} trip data for all years.")
 
 
 if __name__ == "__main__":
@@ -54,12 +59,10 @@ if __name__ == "__main__":
         pipeline = dlt.pipeline(
             pipeline_name=f'tlc_{collection["type"]}_data',
             destination='filesystem',
-            dataset_name=f'tlc_{collection["type"]}_data'
+            dataset_name=f'{collection["type"]}_data' if collection["type"] == 'fhv' \
+                                                        else f'{collection["type"]}_taxi_data'
         )
-        print(f'Running pipeline for {collection["type"]} trip data')
         run = pipeline.run(data=fetch_data_resource(collection))
         print(run)
-        print(f'Pipeline for {collection["type"]} trip data completed')
-        print('--')
     end = time.time()
-    print('All done! in' + str(end - start) + ' seconds')
+    print(f'All done in {str(end - start)} seconds.')

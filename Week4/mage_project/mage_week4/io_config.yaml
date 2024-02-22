@@ -1,0 +1,5 @@
+version: 0.1.1
+
+default:
+  GOOGLE_SERVICE_ACC_KEY_FILEPATH: "/home/src/dataengineering-secret.json"
+  GOOGLE_LOCATION: EU
