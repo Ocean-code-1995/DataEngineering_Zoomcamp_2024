@@ -10,7 +10,7 @@ def transform(data, *args, **kwargs):
         data['airport_fee'] = data['airport_fee'].astype(float)
     else:
         data['airport_fee'] = np.nan
-    
+
     return data
 
 
