@@ -1,6 +1,13 @@
 - Note: for the lectures yellow & green taxi data (2020 + 2021) is utilized.
 - Note: vm instance addresses change. Hence, copy adjusted address from GCP and adapt in ssh config on local machine
 
+- notes from github: https://github.com/ziritrion/dataeng-zoomcamp/blob/main/notes/5_batch_processing.md
+
+-----------------------------------------------
+- Environment variables are in home/.. .zprofile
+- .zshrc
+-----------------------------------------------
+
 -----------------------------------------------------
 To run PySpark, we first need to add it to PYTHONPATH:
 -----------------------------------------------------
@@ -24,7 +31,6 @@ see data directory as tree structure:
 
 determine size of data:
 ls -lhR >data/<
-
 
 
 Uploading data to GCP from VM:
