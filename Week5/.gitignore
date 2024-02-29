@@ -1,0 +1,11 @@
+# ignore data for raw data files and reports
+code/data
+code/fhvhv
+code/tmp
+code/head.csv
+code/taxi+_zone_lookup.csv
+code/fhvhv_tripdata_2021-01.csv
+code/zones
+
+# checkpoints
+.ipynb_checkpoints

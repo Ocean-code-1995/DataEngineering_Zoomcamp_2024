@@ -2,6 +2,7 @@
 .vscode
 
 *-secret.json
+*-key.json
 .env
 
 ipynb_checkpoints
