@@ -1,0 +1,39 @@
+- Note: for the lectures yellow & green taxi data (2020 + 2021) is utilized.
+- Note: vm instance addresses change. Hence, copy adjusted address from GCP and adapt in ssh config on local machine
+
+-----------------------------------------------------
+To run PySpark, we first need to add it to PYTHONPATH:
+-----------------------------------------------------
+export PYTHONPATH="${SPARK_HOME}/python/:$PYTHONPATH"
+export PYTHONPATH="${SPARK_HOME}/python/lib/py4j-0.10.9-src.zip:$PYTHONPATH"
+
+//////// BETTER ///////////
+
+conda activate DE-Zoomcamp
+
+-> then run "jupyter notebook" in terminal, copy  "http://localhost:8888..." and visit!
+
+- create spark session in notebook, set port 4040 and access to monitor jobs.
+
+
+----------------------------------------------------
+see data directory as tree structure:
+- sudo apt-get install tree
+- tree >data<
+
+
+determine size of data:
+ls -lhR >data/<
+
+
+
+Uploading data to GCP from VM:
+-----------------------------------------------------------------------
+- authenticate is neccessary: gcloud auth login
+- navigate to data directory you want upload
+- run: gsutil -m cp -r pq/ gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/pq
+                                 ^----------bucket name----------^
+
+download into lib: gsutil cp gs://hadoop-lib/gcs/gcs-connector-hadoop3-2.2.5.jar gcs-connector-hadoop3-2.2.5.jar
+
+-> https://cloud.google.com/dataproc/docs/concepts/connectors/cloud-storage
