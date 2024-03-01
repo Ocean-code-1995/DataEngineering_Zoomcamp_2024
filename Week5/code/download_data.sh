@@ -20,3 +20,6 @@ for MONTH in {1..12}; do
   wget ${URL} -O ${LOCAL_PATH}
 
 done
+
+### -->>> Execute the script with the following command:
+### ./download_data.sh yellow 2020
