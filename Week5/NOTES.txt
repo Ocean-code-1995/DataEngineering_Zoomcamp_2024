@@ -1,0 +1,151 @@
+- Note: for the lectures yellow & green taxi data (2020 + 2021) is utilized.
+- Note: vm instance addresses change. Hence, copy adjusted address from GCP and adapt in ssh config on local machine
+
+- notes from github: https://github.com/ziritrion/dataeng-zoomcamp/blob/main/notes/5_batch_processing.md
+
+-----------------------------------------------
+- Environment variables are in home/.. .zprofile
+- .zshrc
+-----------------------------------------------
+
+-----------------------------------------------------
+To run PySpark, we first need to add it to PYTHONPATH:
+-----------------------------------------------------
+export PYTHONPATH="${SPARK_HOME}/python/:$PYTHONPATH"
+export PYTHONPATH="${SPARK_HOME}/python/lib/py4j-0.10.9-src.zip:$PYTHONPATH"
+
+//////// BETTER ///////////
+
+conda activate DE-Zoomcamp
+
+-> then run "jupyter notebook" in terminal, copy  "http://localhost:8888..." and visit!
+
+- create spark session in notebook, set port 4040 and access to monitor jobs.
+
+
+----------------------------------------------------
+see data directory as tree structure:
+- sudo apt-get install tree
+- tree >data<
+
+
+determine size of data:
+ls -lhR >data/<
+
+
+Uploading data to GCP from VM:
+-----------------------------------------------------------------------
+- authentication is neccessary: gcloud auth login
+- navigate to data directory you want upload
+- run: gsutil -m cp -r pq/ gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/pq
+                                 ^----------bucket name----------^
+
+download into lib: gsutil cp gs://hadoop-lib/gcs/gcs-connector-hadoop3-2.2.5.jar gcs-connector-hadoop3-2.2.5.jar
+
+-> https://cloud.google.com/dataproc/docs/concepts/connectors/cloud-storage
+
+----------------------
+# Create Spark Cluster
+----------------------
+- navigate to installation of spark to start script which fires spark master:
+    cd $SPARK_HOME
+
+- execute the script below in order to start spark master:
+./sbin/start-master.sh
+
+- go to localhost:8080 spark master utilized
+- copy path from UI and paste in master(url) within notebook spark session builder
+
+- start workers by:
+./sbin/start-worker.sh <master-spark-URL>
+
+- turn 06_spark_sql into python script:
+   jupyter nbconvert --to=script 06_spark_sql_cluster.ipynb
+
+- execute:
+
+python 06_spark_sql_cluster.py \
+    --input_green='data/pq/green/2020/*/' \
+    --input_yellow='data/pq/yellow/2020/*/' \
+    --output='data/report-2020/'
+
+- spark submit:
+
+Note: make sure to be in directory of the python file to be executed!!!
+
+URL='spark://MacBook-Pro-von-Sebastian.local:7077'
+
+spark-submit \
+    --master="${URL}" \
+    06_spark_sql_cluster.py \
+        --input_green='data/pq/green/2021/*/' \
+        --input_yellow='data/pq/yellow/2021/*/' \
+        --output='data/report-2021'
+
+- Stop worker:
+cd $SPARK_HOME
+./sbin/stop-worker.sh
+
+- Stop master:
+./sbin/stop-master.sh
+
+
+-------------------------
+# Create DataProc Cluster
+-------------------------
+- go to gcp dataproc and configure Cluster
+
+- upload script to bucket:
+   gsutil cp 06_spark_sql_cluster.py gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/code/06_spark_sql_clu
+ster.py
+
+
+### Submit job on dataproc in UI
+--------------------------------
+- copy: gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/code/06_spark_sql_cluster.py
+and paste for "main python file- entry"
+
+
+- specify arguments:
+--input_green=gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/pq/green/2021/*/
+--input_yellow=gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/pq/yellow/2021/*/
+--output=gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/report-2021
+
+
+### //OR// Sumbit with CLI
+-------------------
+gcloud dataproc jobs submit pyspark \
+  --cluster='' \
+  --region='' \
+  '>python script path gcs bucket>' \
+  -- \
+  --input_green='gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/pq/green/2021/*/' \
+  --input_yellow='gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/pq/yellow/2021/*/' \
+  --output='gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/report-2021'
+
+
+
+------------------------------
+# Connecting Spark to BigQuery
+------------------------------
+https://cloud.google.com/dataproc/docs/tutorials/bigquery-connector-spark-example#pyspark
+
+- load script:
+    gsutil cp 06_spark_sql_BigQuery.py gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/code/06_spark_sql_BigQuery.py
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+- write to bigquery:   >>>>>>>>>NOT WORKING<<<<<<<<<<
+
+gcloud dataproc jobs submit pyspark \
+    --cluster='de-zoomcamp-cluster-w5' \
+    --region='europe-west3' \
+    --jars='gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar' \
+    'gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/code/06_spark_sql_BigQuery.py' \
+    -- \
+        --input_green='gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/pq/green/2020/*/' \
+        --input_yellow='gs://dtc_data_lake_de-zoomcamp-nytaxi_w5/pq/yellow/2020/*/' \
+        --output='pyspark_dataset.reports_2020'
+
+//////////////////////////////////////////////////////////////////////////////////////////
