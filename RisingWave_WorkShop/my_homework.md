@@ -116,7 +116,9 @@ Query to get desired solution:
 **SOLUTION:**
 
   pickup_zone   | dropoff_zone | avg_trip_time_minutes | number_of_trips
+
 ----------------+--------------+-----------------------+-----------------
+
  Yorkville East | Steinway     |           1439.550000 |               1
 
 --> 1
