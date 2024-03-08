@@ -71,9 +71,10 @@ Now from that created MV query the pair with highest average:
 
 
 **SOLUTION:**
-  pickup_zone   | dropoff_zone | avg_trip_time_minutes
-----------------+--------------+-----------------------
- Yorkville East | Steinway     |           1439.550000
+
+Yorkville East, Steinway (avg_trip_time_minutes=1439.550000)
+
+
 
 
 
@@ -113,9 +114,12 @@ Query to get desired solution:
 ```
 
 **SOLUTION:**
+
   pickup_zone   | dropoff_zone | avg_trip_time_minutes | number_of_trips
 ----------------+--------------+-----------------------+-----------------
  Yorkville East | Steinway     |           1439.550000 |               1
+
+--> 1
 
 
 Q3) From the latest pickup time to 17 hours before, what are the top 3 busiest zones in terms of number of pickups?
@@ -156,8 +160,12 @@ Next, incorporate this into a query that filters records from the latest pickup 
 ```
 
 **SOLUTION:**
+
         zone         | pickup_count
 ---------------------+--------------
  LaGuardia Airport   |           19
  Lincoln Square East |           17
  JFK Airport         |           17
+
+--> LaGuardia Airport, Lincoln Square East, JFK Airport
+
