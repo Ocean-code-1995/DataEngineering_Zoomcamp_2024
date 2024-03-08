@@ -162,9 +162,13 @@ Next, incorporate this into a query that filters records from the latest pickup 
 **SOLUTION:**
 
         zone         | pickup_count
+
 ---------------------+--------------
+
  LaGuardia Airport   |           19
+
  Lincoln Square East |           17
+
  JFK Airport         |           17
 
 --> LaGuardia Airport, Lincoln Square East, JFK Airport
